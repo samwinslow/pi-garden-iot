@@ -104,15 +104,14 @@ if __name__ == '__main__':
     # Publish message to server desired number of times.
     # This step is skipped if message is blank.
     # This step loops forever if count was set to 0.
-    if args.message:
-      while True:
-          message = "example message"
-          print("Publishing message to topic '{}': {}".format(args.topic, message))
-          mqtt_connection.publish(
-              topic=args.topic,
-              payload=message,
-              qos=mqtt.QoS.AT_LEAST_ONCE)
-          time.sleep(1)
+    while True:
+        message = "example message"
+        print("Publishing message to topic '{}': {}".format(args.topic, message))
+        mqtt_connection.publish(
+            topic=args.topic,
+            payload=message,
+            qos=mqtt.QoS.AT_LEAST_ONCE)
+        time.sleep(1)
 
     # Disconnect
     print("Disconnecting...")

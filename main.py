@@ -162,7 +162,7 @@ if __name__ == '__main__':
         payload=json.dumps(sensorPayload),
         qos=mqtt.QoS.AT_LEAST_ONCE
       )
-      if s['sunrise'] < datetime.now() < s['sunset']:
+      if s['sunrise'] < datetime.now(tz=s['sunrise'].tzinfo) < s['sunset']:
         mqtt_connection.publish(
           topic="garden/lightStatus",
           payload=json.dumps({

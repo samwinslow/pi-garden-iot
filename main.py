@@ -188,10 +188,12 @@ if __name__ == '__main__':
         set_lightStatus(True)
       else:
         set_lightStatus(False)
-      # mqtt_connection.publish(
-      #   topic="garden/lightStatus",
-      #   payload=json.dumps(waterPayload),
-      #   qos=mqtt.QoS.AT_LEAST_ONCE)
+      
+      if capacitance < 400:
+        set_waterStatus(True)
+      else:
+        set_waterStatus(False)
+
       time.sleep(refresh_interval)
 
   # Disconnect

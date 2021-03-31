@@ -4,4 +4,5 @@ python3 main.py \
   --key certs/914634da34-private.pem.key \
   --root-ca certs/AmazonRootCA1.pem \
   --client-id basicPubSub \
+  --city New\ York
   # --verbosity Info

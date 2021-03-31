@@ -8,11 +8,11 @@ import sys
 import threading
 import time
 import json
+from astral import Astral
 
 from board import SCL, SDA
 import busio
 from adafruit_seesaw.seesaw import Seesaw
-
 from gpiozero import DigitalOutputDevice
 
 parser = argparse.ArgumentParser(description="Send and receive messages through and MQTT connection.")
@@ -24,12 +24,20 @@ parser.add_argument('--root-ca', help="File path to root certificate authority, 
                     "Necessary if MQTT server uses a certificate that's not already in " +
                     "your trust store.")
 parser.add_argument('--client-id', default="gardenClient", help="Client ID for MQTT connection.")
+parser.add_argument('--city', required=True, help="City name to determine sunrise and sunset times. Ex: New York")
 parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], default=io.LogLevel.NoLogs.name,
   help='Logging level')
 
 args = parser.parse_args()
 
 io.init_logging(getattr(io.LogLevel, args.verbosity), 'stderr')
+
+# Initialize Astral time
+astral = Astral()
+astral.solar_depression = 'civil'
+city = astral[args.city]
+sun = city.sun(local=True)
+print(str(sun))
 
 # Initialize I2C soil sensor
 i2c_bus = busio.I2C(SCL, SDA)
@@ -81,7 +89,9 @@ def on_waterStatus_received(topic, payload):
     pump_relay.off()
 
 if __name__ == '__main__':
-  # Initialize light and pump status
+  # Initialize light status
+
+
   # Spin up networking resources
   event_loop_group = io.EventLoopGroup(1)
   host_resolver = io.DefaultHostResolver(event_loop_group)

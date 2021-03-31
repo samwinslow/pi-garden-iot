@@ -88,8 +88,8 @@ def set_waterStatus(on):
   global pump_last_on
   if on:
     print("ON!")
-    print((datetime.now() - pump_last_on).total_seconds())
-    pump_timeout_engaged = (datetime.now() - pump_last_on).total_seconds() < 10 * 60
+    print(abs((datetime.now() - pump_last_on).total_seconds()))
+    pump_timeout_engaged = abs((datetime.now() - pump_last_on).total_seconds()) < 10 * 60
     if pump_timeout_engaged:
       print("Pump timeout engaged; ignoring request.")
       return

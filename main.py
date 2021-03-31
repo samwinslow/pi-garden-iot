@@ -23,7 +23,8 @@ parser.add_argument('--root-ca', help="File path to root certificate authority, 
                     "Necessary if MQTT server uses a certificate that's not already in " +
                     "your trust store.")
 parser.add_argument('--client-id', default="gardenClient", help="Client ID for MQTT connection.")
-parser.add_argument('--debug', default="false", help="Verbose logs.")
+parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], default=io.LogLevel.NoLogs.name,
+  help='Logging level')
 
 args = parser.parse_args()
 

@@ -26,6 +26,10 @@ parser.add_argument('--root-ca', help="File path to root certificate authority, 
                     "your trust store.")
 parser.add_argument('--client-id', default="gardenClient", help="Client ID for MQTT connection.")
 parser.add_argument('--city', required=True, help="City name to determine sunrise and sunset times. Ex: New York")
+parser.add_argument('--region', required=True, help="Region name to determine sunrise and sunset times. Ex: United States")
+parser.add_argument('--timezone', required=True, help="IANA timezone name to determine sunrise and sunset times. Ex: America/New_York")
+parser.add_argument('--lat', required=True, help="Latitude to determine sunrise and sunset times. Ex: 40.725380")
+parser.add_argument('--long', required=True, help="Longitude to determine sunrise and sunset times. Ex: -73.980760")
 parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], default=io.LogLevel.NoLogs.name,
   help='Logging level')
 
@@ -34,7 +38,7 @@ args = parser.parse_args()
 io.init_logging(getattr(io.LogLevel, args.verbosity), 'stderr')
 
 # Initialize Astral time
-city = LocationInfo(args.city)
+city = LocationInfo(args.city, args.region, args.lat, args.long)
 suntimes = sun(city.observer)
 print(str(city))
 print(str(suntimes))

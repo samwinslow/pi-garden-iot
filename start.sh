@@ -4,5 +4,9 @@ python3 main.py \
   --key certs/914634da34-private.pem.key \
   --root-ca certs/AmazonRootCA1.pem \
   --client-id basicPubSub \
-  --city New\ York
+  --city New\ York \
+  --region United\ States \
+  --timezone America/New_York \
+  --lat 40.725380 \
+  --long -73.980760 \
   # --verbosity Info

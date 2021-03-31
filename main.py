@@ -45,6 +45,7 @@ soil = Seesaw(i2c_bus, addr=0x36)
 # Initialize relay output devices
 light_relay = DigitalOutputDevice(17)
 pump_relay = DigitalOutputDevice(23)
+pump_last_on = datetime.now() - timedelta(minutes=-10)
 
 # Callback when connection is accidentally lost.
 def on_connection_interrupted(connection, error, **kwargs):
@@ -81,8 +82,6 @@ def on_lightStatus_received(topic, payload):
     light_relay.on()
   else:
     light_relay.off()
-
-pump_last_on = datetime.now() - timedelta(minutes=-10)
 
 def set_waterStatus(on):
   if on:

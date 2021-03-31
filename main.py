@@ -8,7 +8,8 @@ import sys
 import threading
 import time
 import json
-from astral import Astral
+from astral import LocationInfo
+from astral.sun import sun
 
 from board import SCL, SDA
 import busio
@@ -33,11 +34,10 @@ args = parser.parse_args()
 io.init_logging(getattr(io.LogLevel, args.verbosity), 'stderr')
 
 # Initialize Astral time
-astral = Astral()
-astral.solar_depression = 'civil'
-city = astral[args.city]
-sun = city.sun(local=True)
-print(str(sun))
+city = LocationInfo(args.city)
+suntimes = sun(city.observer)
+print(str(city))
+print(str(suntimes))
 
 # Initialize I2C soil sensor
 i2c_bus = busio.I2C(SCL, SDA)

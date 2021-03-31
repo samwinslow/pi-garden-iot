@@ -109,9 +109,12 @@ if __name__ == '__main__':
   print("Subscribed with {}".format(str(subscribe_result['qos'])))
 
   while True:
+    temperature = soil.get_temp()
+    capacitance = soil.moisture_read()
+    print("Temp: " + str(temperature) + " Capacitance: " + str(capacitance))
     sensorPayload = {
-      "temperature": soil.get_temp(),
-      "capacitance": soil.moisture_read()
+      "temperature": temperature,
+      "capacitance": capacitance
     }
     lightPayload = {
       "on": True,

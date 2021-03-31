@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from astral import LocationInfo
 from astral.sun import sun
 
@@ -81,7 +81,7 @@ def on_lightStatus_received(topic, payload):
   else:
     light_relay.off()
 
-pump_last_on = datetime.now().timedelta(minutes=-10)
+pump_last_on = datetime.now() - timedelta(minutes=-10)
 
 def set_waterStatus(on):
   pump_timeout_engaged = (datetime.now() - pump_last_on).total_minutes() < 10

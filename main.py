@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import json
+import datetime import datetime
 from astral import LocationInfo
 from astral.sun import sun
 
@@ -36,18 +37,6 @@ parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], defaul
 args = parser.parse_args()
 
 io.init_logging(getattr(io.LogLevel, args.verbosity), 'stderr')
-
-# Initialize Astral time
-city = LocationInfo(
-  args.city,
-  args.region,
-  args.timezone,
-  args.lat,
-  args.long
-)
-suntimes = sun(observer=city.observer, tzinfo=args.timezone)
-print(str(city))
-print(str(suntimes))
 
 # Initialize I2C soil sensor
 i2c_bus = busio.I2C(SCL, SDA)
@@ -99,9 +88,6 @@ def on_waterStatus_received(topic, payload):
     pump_relay.off()
 
 if __name__ == '__main__':
-  # Initialize light status
-
-
   # Spin up networking resources
   event_loop_group = io.EventLoopGroup(1)
   host_resolver = io.DefaultHostResolver(event_loop_group)
@@ -144,34 +130,57 @@ if __name__ == '__main__':
   subscribe_result = subscribe_future.result()
   print("Subscribed with {}".format(str(subscribe_result['qos'])))
 
+  refresh_interval = 10
+  time_fetch_interval = 12 * 60 # Approx. minutes to refetch sunrise/sunset
+
   while True:
-    temperature = soil.get_temp()
-    capacitance = soil.moisture_read()
-    print("Temp: " + str(temperature) + " Capacitance: " + str(capacitance))
-    sensorPayload = {
-      "temperature": temperature,
-      "capacitance": capacitance
-    }
-    lightPayload = {
-      "on": True,
-    }
-    waterPayload = {
-      "on": False,
-    }
-    print("Publishing message to topic garden/sensorData...")
-    mqtt_connection.publish(
-      topic="garden/sensorData",
-      payload=json.dumps(sensorPayload),
-      qos=mqtt.QoS.AT_LEAST_ONCE)
-    # mqtt_connection.publish(
-    #   topic="garden/lightStatus",
-    #   payload=json.dumps(lightPayload),
-    #   qos=mqtt.QoS.AT_LEAST_ONCE)
-    # mqtt_connection.publish(
-    #   topic="garden/lightStatus",
-    #   payload=json.dumps(waterPayload),
-    #   qos=mqtt.QoS.AT_LEAST_ONCE)
-    time.sleep(10 if args.verbosity is not io.LogLevel.NoLogs.name else 60)
+    # Initialize Astral time
+    city = LocationInfo(
+      args.city,
+      args.region,
+      args.timezone,
+      args.lat,
+      args.long
+    )
+    s = sun(observer=city.observer, tzinfo=args.timezone)
+    print(str(city))
+    print(str(s))
+    for i in range(time_fetch_interval):
+      temperature = soil.get_temp()
+      capacitance = soil.moisture_read()
+      print("Temp: " + str(temperature) + " Capacitance: " + str(capacitance))
+      sensorPayload = {
+        "temperature": temperature,
+        "capacitance": capacitance
+      }
+      waterPayload = {
+        "on": False,
+      }
+      print("Publishing message to topic garden/sensorData...")
+      mqtt_connection.publish(
+        topic="garden/sensorData",
+        payload=json.dumps(sensorPayload),
+        qos=mqtt.QoS.AT_LEAST_ONCE
+      )
+      if s['sunrise'] < datetime.now(tz=args.timezone) < s['sunset']:
+        mqtt_connection.publish(
+          topic="garden/lightStatus",
+          payload=json.dumps({
+            "on": True,
+          }),
+          qos=mqtt.QoS.AT_LEAST_ONCE)
+      else:
+        mqtt_connection.publish(
+          topic="garden/lightStatus",
+          payload=json.dumps({
+            "on": False,
+          }),
+          qos=mqtt.QoS.AT_LEAST_ONCE)
+      # mqtt_connection.publish(
+      #   topic="garden/lightStatus",
+      #   payload=json.dumps(waterPayload),
+      #   qos=mqtt.QoS.AT_LEAST_ONCE)
+      time.sleep(refresh_interval)
 
   # Disconnect
   print("Disconnecting...")

@@ -3,5 +3,4 @@ python3 main.py \
   --cert certs/914634da34-certificate.pem.crt \
   --key certs/914634da34-private.pem.key \
   --root-ca certs/AmazonRootCA1.pem \
-  --client-id basicPubSub \
-  --topic sdk/test/Python
+  --client-id basicPubSub

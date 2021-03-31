@@ -7,7 +7,7 @@ from awsiot import mqtt_connection_builder
 import sys
 import threading
 import time
-from uuid import uuid4
+import json
 
 # This sample uses the Message Broker for AWS IoT to send and receive messages
 # through an MQTT connection. On startup, the device connects to the server,
@@ -23,8 +23,7 @@ parser.add_argument('--key', help="File path to your private key, in PEM format.
 parser.add_argument('--root-ca', help="File path to root certificate authority, in PEM format. " +
                                       "Necessary if MQTT server uses a certificate that's not already in " +
                                       "your trust store.")
-parser.add_argument('--client-id', default="test-" + str(uuid4()), help="Client ID for MQTT connection.")
-parser.add_argument('--topic', default="test/topic", help="Topic to subscribe to, and publish messages to.")
+parser.add_argument('--client-id', default="gardenClient", help="Client ID for MQTT connection.")
 parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], default=io.LogLevel.NoLogs.name,
     help='Logging level')
 
@@ -61,8 +60,11 @@ def on_resubscribe_complete(resubscribe_future):
 
 
 # Callback when the subscribed topic receives a message
-def on_message_received(topic, payload, dup, qos, retain, **kwargs):
-    print("Received message from topic '{}': {}".format(topic, payload))
+def on_lightStatus_received(topic, payload):
+    print("New lightStatus payload: {}".format(payload))
+
+def on_waterStatus_received(topic, payload):
+    print("New waterStatus payload: {}".format(payload))
 
 if __name__ == '__main__':
     # Spin up resources
@@ -84,33 +86,53 @@ if __name__ == '__main__':
 
     print("Connecting to {} with client ID '{}'...".format(
         args.endpoint, args.client_id))
-
     connect_future = mqtt_connection.connect()
-
-    # Future.result() waits until a result is available
     connect_future.result()
     print("Connected!")
 
     # Subscribe
-    print("Subscribing to topic '{}'...".format(args.topic))
+    print("Subscribing to topic garden/lightStatus...")
     subscribe_future, packet_id = mqtt_connection.subscribe(
-        topic=args.topic,
+        topic="garden/lightStatus",
         qos=mqtt.QoS.AT_LEAST_ONCE,
-        callback=on_message_received)
+        callback=on_lightStatus_received)    
 
     subscribe_result = subscribe_future.result()
     print("Subscribed with {}".format(str(subscribe_result['qos'])))
 
-    # Publish message to server desired number of times.
-    # This step is skipped if message is blank.
-    # This step loops forever if count was set to 0.
+    print("Subscribing to topic garden/waterStatus...")
+    subscribe_future, packet_id = mqtt_connection.subscribe(
+        topic="garden/waterStatus",
+        qos=mqtt.QoS.AT_LEAST_ONCE,
+        callback=on_waterStatus_received)    
+
+    subscribe_result = subscribe_future.result()
+    print("Subscribed with {}".format(str(subscribe_result['qos'])))
+
     while True:
-        message = "example message"
-        print("Publishing message to topic '{}': {}".format(args.topic, message))
+        sensorPayload = {
+            "temperature": 70,
+            "capacitance": 300
+        }
+        lightPayload = {
+            "on": True,
+        }
+        waterPayload = {
+            "on": False,
+        }
+        print("Publishing message to topic garden/sensorData...")
         mqtt_connection.publish(
-            topic=args.topic,
-            payload=message,
+            topic="garden/sensorData",
+            payload=json.dumps(sensorPayload),
             qos=mqtt.QoS.AT_LEAST_ONCE)
+        # mqtt_connection.publish(
+        #     topic="garden/lightStatus",
+        #     payload=json.dumps(lightPayload),
+        #     qos=mqtt.QoS.AT_LEAST_ONCE)
+        # mqtt_connection.publish(
+        #     topic="garden/lightStatus",
+        #     payload=json.dumps(waterPayload),
+        #     qos=mqtt.QoS.AT_LEAST_ONCE)
         time.sleep(1)
 
     # Disconnect

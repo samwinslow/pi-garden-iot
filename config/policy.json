@@ -1,0 +1,31 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["iot:Publish", "iot:Receive"],
+      "Resource": [
+        "arn:aws:iot:us-east-1:478519160896:topic/sdk/test/Python",
+        "arn:aws:iot:us-east-1:478519160896:topic/garden/sensorData",
+        "arn:aws:iot:us-east-1:478519160896:topic/garden/lightStatus",
+        "arn:aws:iot:us-east-1:478519160896:topic/garden/waterStatus"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["iot:Subscribe"],
+      "Resource": [
+        "arn:aws:iot:us-east-1:478519160896:topicfilter/sdk/test/Python",
+        "arn:aws:iot:us-east-1:478519160896:topicfilter/garden/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["iot:Connect"],
+      "Resource": [
+        "arn:aws:iot:us-east-1:478519160896:client/basicPubSub",
+        "arn:aws:iot:us-east-1:478519160896:client/gardenClient"
+      ]
+    }
+  ]
+}

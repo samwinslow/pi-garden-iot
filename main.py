@@ -87,16 +87,13 @@ pump_last_on = datetime.now() + timedelta(minutes=-10)
 def set_waterStatus(on):
   global pump_last_on
   if on:
-    print("ON!")
     pump_timeout_engaged = (datetime.now() - pump_last_on).total_seconds() < 10 * 60
     if pump_timeout_engaged:
-      print("Pump timeout engaged; ignoring request.")
+      print("Pump timeout engaged; ignoring activation request.")
       return
-    
     pump_last_on = datetime.now()
-
   mqtt_connection.publish(
-    topic="garden/lightStatus",
+    topic="garden/waterStatus",
     payload=json.dumps({
       "on": on,
     }),

@@ -71,7 +71,8 @@ def set_lightStatus(on):
     payload=json.dumps({
       "on": on,
     }),
-    qos=mqtt.QoS.AT_LEAST_ONCE)
+    qos=mqtt.QoS.AT_LEAST_ONCE
+  )
 
 def on_lightStatus_received(topic, payload):
   print("New lightStatus payload: {}".format(payload))
@@ -84,17 +85,19 @@ def on_lightStatus_received(topic, payload):
 pump_last_on = datetime.now() - timedelta(minutes=-10)
 
 def set_waterStatus(on):
-  pump_timeout_engaged = (datetime.now() - pump_last_on).total_minutes() < 10
-  if on and pump_timeout_engaged:
-    print("Pump timeout engaged; ignoring request.")
-    return
-
+  if on:
+    pump_timeout_engaged = (datetime.now() - pump_last_on).total_minutes() < 10
+    if pump_timeout_engaged:
+      print("Pump timeout engaged; ignoring request.")
+      return
+    pump_last_on = datetime.now()
   mqtt_connection.publish(
-      topic="garden/lightStatus",
-      payload=json.dumps({
-        "on": on,
-      }),
-      qos=mqtt.QoS.AT_LEAST_ONCE)
+    topic="garden/lightStatus",
+    payload=json.dumps({
+      "on": on,
+    }),
+    qos=mqtt.QoS.AT_LEAST_ONCE
+  )
 
 def on_waterStatus_received(topic, payload):
   print("New waterStatus payload: {}".format(payload))

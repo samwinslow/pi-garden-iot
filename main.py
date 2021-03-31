@@ -53,24 +53,26 @@ def on_connection_interrupted(connection, error, **kwargs):
 # Callback when an interrupted connection is re-established.
 def on_connection_resumed(connection, return_code, session_present, **kwargs):
   print("Connection resumed. return_code: {} session_present: {}".format(return_code, session_present))
-
   if return_code == mqtt.ConnectReturnCode.ACCEPTED and not session_present:
     print("Session did not persist. Resubscribing to existing topics...")
     resubscribe_future, _ = connection.resubscribe_existing_topics()
-
-    # Cannot synchronously wait for resubscribe result because we're on the connection's event-loop thread,
-    # evaluate result with a callback instead.
     resubscribe_future.add_done_callback(on_resubscribe_complete)
 
 def on_resubscribe_complete(resubscribe_future):
     resubscribe_results = resubscribe_future.result()
     print("Resubscribe results: {}".format(resubscribe_results))
-
     for topic, qos in resubscribe_results['topics']:
       if qos is None:
         sys.exit("Server rejected resubscribe to topic: {}".format(topic))
 
-# Callback when the subscribed topic receives a message
+def set_lightStatus(on):
+  mqtt_connection.publish(
+    topic="garden/lightStatus",
+    payload=json.dumps({
+      "on": on,
+    }),
+    qos=mqtt.QoS.AT_LEAST_ONCE)
+
 def on_lightStatus_received(topic, payload):
   print("New lightStatus payload: {}".format(payload))
   lightStatus = json.loads(payload)['on']
@@ -78,6 +80,21 @@ def on_lightStatus_received(topic, payload):
     light_relay.on()
   else:
     light_relay.off()
+
+pump_last_on = datetime.now().timedelta(minutes=-10)
+
+def set_waterStatus(on):
+  pump_timeout_engaged = (datetime.now() - pump_last_on).total_minutes() < 10
+  if on and pump_timeout_engaged:
+    print("Pump timeout engaged; ignoring request.")
+    return
+
+  mqtt_connection.publish(
+      topic="garden/lightStatus",
+      payload=json.dumps({
+        "on": on,
+      }),
+      qos=mqtt.QoS.AT_LEAST_ONCE)
 
 def on_waterStatus_received(topic, payload):
   print("New waterStatus payload: {}".format(payload))
@@ -130,7 +147,7 @@ if __name__ == '__main__':
   subscribe_result = subscribe_future.result()
   print("Subscribed with {}".format(str(subscribe_result['qos'])))
 
-  refresh_interval = 10
+  refresh_interval = 60
   time_fetch_interval = 12 * 60 # Approx. minutes to refetch sunrise/sunset
 
   while True:
@@ -149,33 +166,21 @@ if __name__ == '__main__':
       temperature = soil.get_temp()
       capacitance = soil.moisture_read()
       print("Temp: " + str(temperature) + " Capacitance: " + str(capacitance))
-      sensorPayload = {
-        "temperature": temperature,
-        "capacitance": capacitance
-      }
-      waterPayload = {
-        "on": False,
-      }
-      print("Publishing message to topic garden/sensorData...")
+
+      print("Publishing to topic garden/sensorData...")
       mqtt_connection.publish(
         topic="garden/sensorData",
-        payload=json.dumps(sensorPayload),
+        payload=json.dumps({
+          "temperature": temperature,
+          "capacitance": capacitance
+        }),
         qos=mqtt.QoS.AT_LEAST_ONCE
       )
+
       if s['sunrise'] < datetime.now(tz=s['sunrise'].tzinfo) < s['sunset']:
-        mqtt_connection.publish(
-          topic="garden/lightStatus",
-          payload=json.dumps({
-            "on": True,
-          }),
-          qos=mqtt.QoS.AT_LEAST_ONCE)
+        set_lightStatus(True)
       else:
-        mqtt_connection.publish(
-          topic="garden/lightStatus",
-          payload=json.dumps({
-            "on": False,
-          }),
-          qos=mqtt.QoS.AT_LEAST_ONCE)
+        set_lightStatus(False)
       # mqtt_connection.publish(
       #   topic="garden/lightStatus",
       #   payload=json.dumps(waterPayload),

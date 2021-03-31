@@ -89,7 +89,7 @@ def set_waterStatus(on):
   if on:
     pump_timeout_engaged = (datetime.now() - pump_last_on).total_seconds() < 10 * 60
     if pump_timeout_engaged:
-      print("Pump timeout engaged; ignoring activation request.")
+      print("Pump timeout engaged: deactivating, ignoring activation request.")
       mqtt_connection.publish(
         topic="garden/waterStatus",
         payload=json.dumps({

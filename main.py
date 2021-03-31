@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 import json
-import datetime import datetime
+from datetime import datetime
 from astral import LocationInfo
 from astral.sun import sun
 

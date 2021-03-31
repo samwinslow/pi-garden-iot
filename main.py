@@ -13,6 +13,7 @@ from board import SCL, SDA
 import busio
 from adafruit_seesaw.seesaw import Seesaw
 
+from gpiozero import DigitalOutputDevice
 
 parser = argparse.ArgumentParser(description="Send and receive messages through and MQTT connection.")
 parser.add_argument('--endpoint', required=True, help="Your AWS IoT custom endpoint, not including a port. " +
@@ -33,6 +34,10 @@ io.init_logging(getattr(io.LogLevel, args.verbosity), 'stderr')
 # Initialize I2C soil sensor
 i2c_bus = busio.I2C(SCL, SDA)
 soil = Seesaw(i2c_bus, addr=0x36)
+
+# Initialize relay output devices
+light_relay = DigitalOutputDevice(17)
+pump_relay = DigitalOutputDevice(23)
 
 # Callback when connection is accidentally lost.
 def on_connection_interrupted(connection, error, **kwargs):
@@ -61,12 +66,23 @@ def on_resubscribe_complete(resubscribe_future):
 # Callback when the subscribed topic receives a message
 def on_lightStatus_received(topic, payload):
   print("New lightStatus payload: {}".format(payload))
+  lightStatus = json.loads(payload)['on']
+  if lightStatus is True:
+    light_relay.on()
+  else:
+    light_relay.off()
 
 def on_waterStatus_received(topic, payload):
   print("New waterStatus payload: {}".format(payload))
+  waterStatus = json.loads(payload)['on']
+  if waterStatus is True:
+    pump_relay.on()
+  else:
+    pump_relay.off()
 
 if __name__ == '__main__':
-  # Spin up resources
+  # Initialize light and pump status
+  # Spin up networking resources
   event_loop_group = io.EventLoopGroup(1)
   host_resolver = io.DefaultHostResolver(event_loop_group)
   client_bootstrap = io.ClientBootstrap(event_loop_group, host_resolver)

@@ -88,6 +88,7 @@ def set_waterStatus(on):
   global pump_last_on
   if on:
     print("ON!")
+    print((datetime.now() - pump_last_on).total_seconds())
     pump_timeout_engaged = (datetime.now() - pump_last_on).total_seconds() < 10 * 60
     if pump_timeout_engaged:
       print("Pump timeout engaged; ignoring request.")
@@ -154,7 +155,7 @@ if __name__ == '__main__':
   subscribe_result = subscribe_future.result()
   print("Subscribed with {}".format(str(subscribe_result['qos'])))
 
-  refresh_interval = 60
+  refresh_interval = 10
   time_fetch_interval = 12 * 60 # Approx. minutes to refetch sunrise/sunset
 
   while True:

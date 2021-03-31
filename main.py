@@ -38,8 +38,14 @@ args = parser.parse_args()
 io.init_logging(getattr(io.LogLevel, args.verbosity), 'stderr')
 
 # Initialize Astral time
-city = LocationInfo(args.city, args.region, args.timezone, args.lat, args.long)
-suntimes = sun(city.observer)
+city = LocationInfo(
+  args.city,
+  args.region,
+  args.timezone,
+  args.lat,
+  args.long
+)
+suntimes = sun(observer=city.observer, tzinfo=args.timezone)
 print(str(city))
 print(str(suntimes))
 

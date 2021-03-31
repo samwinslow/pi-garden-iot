@@ -23,8 +23,7 @@ parser.add_argument('--root-ca', help="File path to root certificate authority, 
                     "Necessary if MQTT server uses a certificate that's not already in " +
                     "your trust store.")
 parser.add_argument('--client-id', default="gardenClient", help="Client ID for MQTT connection.")
-parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], default=io.LogLevel.NoLogs.name,
-  help='Logging level')
+parser.add_argument('--debug', default="false", help="Verbose logs.")
 
 args = parser.parse_args()
 
@@ -111,7 +110,8 @@ if __name__ == '__main__':
   while True:
     temperature = soil.get_temp()
     capacitance = soil.moisture_read()
-    print("Temp: " + str(temperature) + " Capacitance: " + str(capacitance))
+    if args.debug:
+      print("Temp: " + str(temperature) + " Capacitance: " + str(capacitance))
     sensorPayload = {
       "temperature": temperature,
       "capacitance": capacitance
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     #   topic="garden/lightStatus",
     #   payload=json.dumps(waterPayload),
     #   qos=mqtt.QoS.AT_LEAST_ONCE)
-    time.sleep(1)
+    time.sleep(10 if args.debug else 60)
 
   # Disconnect
   print("Disconnecting...")

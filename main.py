@@ -111,8 +111,7 @@ if __name__ == '__main__':
   while True:
     temperature = soil.get_temp()
     capacitance = soil.moisture_read()
-    if args.debug:
-      print("Temp: " + str(temperature) + " Capacitance: " + str(capacitance))
+    print("Temp: " + str(temperature) + " Capacitance: " + str(capacitance))
     sensorPayload = {
       "temperature": temperature,
       "capacitance": capacitance
@@ -136,7 +135,7 @@ if __name__ == '__main__':
     #   topic="garden/lightStatus",
     #   payload=json.dumps(waterPayload),
     #   qos=mqtt.QoS.AT_LEAST_ONCE)
-    time.sleep(10 if args.debug else 60)
+    time.sleep(10 if args.verbosity is not io.LogLevel.NoLogs else 60)
 
   # Disconnect
   print("Disconnecting...")

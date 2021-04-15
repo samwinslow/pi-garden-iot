@@ -130,7 +130,11 @@ if __name__ == '__main__':
     print("Temp: " + str(temperature) + " Capacitance: " + str(capacitance))
     sensorPayload = {
       "temperature": temperature,
-      "capacitance": capacitance
+      "capacitance": capacitance,
+      "status": {
+        "lightRelay": light_relay.value,
+        "pumpRelay": pump_relay.value,
+      }
     }
     lightPayload = {
       "on": True,
@@ -151,7 +155,7 @@ if __name__ == '__main__':
     #   topic="garden/lightStatus",
     #   payload=json.dumps(waterPayload),
     #   qos=mqtt.QoS.AT_LEAST_ONCE)
-    time.sleep(10 if args.verbosity is not io.LogLevel.NoLogs.name else 60)
+    time.sleep(10 if args.verbosity is not io.LogLevel.NoLogs.name else 5 * 60)
 
   # Disconnect
   print("Disconnecting...")

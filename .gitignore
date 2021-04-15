@@ -1,3 +1,5 @@
 *.swp
 certs/*
 .vscode/*
+**/node_modules/
+**/*.zip

@@ -1,0 +1,14 @@
+{
+  "name": "writetosensordatatable",
+  "version": "1.0.0",
+  "description": "Write MQTT data to DynamoDB table",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "samwinslow",
+  "license": "MIT",
+  "dependencies": {
+    "uuid": "^8.3.2"
+  }
+}

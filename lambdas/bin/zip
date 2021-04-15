@@ -1,0 +1,3 @@
+cd writeToSensorDataTable
+rm ../writeToSensorDataTable.zip
+zip -r ../writeToSensorDataTable.zip .

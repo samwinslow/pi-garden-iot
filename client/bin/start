@@ -1,7 +1,8 @@
-python3 ../src/main.py \
-  --endpoint a3s9vru41x0aa1-ats.iot.us-east-1.amazonaws.com \
-  --cert certs/914634da34-certificate.pem.crt \
-  --key certs/914634da34-private.pem.key \
-  --root-ca certs/AmazonRootCA1.pem \
+cd ../../
+python3 client/src/main.py \
+  --endpoint $AWS_ENDPOINT \
+  --cert $AWS_CLIENT_CERT_PATH \
+  --key $AWS_PRIVATE_KEY_PATH \
+  --root-ca $AWS_ROOT_CA_PATH \
   --client-id basicPubSub \
   # --verbosity Info

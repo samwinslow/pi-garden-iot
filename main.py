@@ -46,13 +46,12 @@ def on_connection_interrupted(connection, error, **kwargs):
 # Callback when an interrupted connection is re-established.
 def on_connection_resumed(connection, return_code, session_present, **kwargs):
   print("Connection resumed. return_code: {} session_present: {}".format(return_code, session_present))
+  resubscribe_future, _ = connection.resubscribe_existing_topics()
+  resubscribe_future.add_done_callback(on_resubscribe_complete)
 
   if return_code == mqtt.ConnectReturnCode.ACCEPTED and not session_present:
     print("Session did not persist. Resubscribing to existing topics...")
     resubscribe_future, _ = connection.resubscribe_existing_topics()
-
-    # Cannot synchronously wait for resubscribe result because we're on the connection's event-loop thread,
-    # evaluate result with a callback instead.
     resubscribe_future.add_done_callback(on_resubscribe_complete)
 
 def on_resubscribe_complete(resubscribe_future):
@@ -80,6 +79,8 @@ def on_waterStatus_received(topic, payload):
   else:
     pump_relay.off()
 
+timeoutDuration = 10 if args.verbosity is not io.LogLevel.NoLogs.name else 5 * 60
+
 if __name__ == '__main__':
   # Initialize light and pump status
   # Spin up networking resources
@@ -97,7 +98,7 @@ if __name__ == '__main__':
     on_connection_resumed=on_connection_resumed,
     client_id=args.client_id,
     clean_session=False,
-    keep_alive_secs=6)
+    keep_alive_secs=timeoutDuration)
 
   print("Connecting to {} with client ID '{}'...".format(
     args.endpoint, args.client_id))
@@ -147,15 +148,7 @@ if __name__ == '__main__':
       topic="garden/sensorData",
       payload=json.dumps(sensorPayload),
       qos=mqtt.QoS.AT_LEAST_ONCE)
-    # mqtt_connection.publish(
-    #   topic="garden/lightStatus",
-    #   payload=json.dumps(lightPayload),
-    #   qos=mqtt.QoS.AT_LEAST_ONCE)
-    # mqtt_connection.publish(
-    #   topic="garden/lightStatus",
-    #   payload=json.dumps(waterPayload),
-    #   qos=mqtt.QoS.AT_LEAST_ONCE)
-    time.sleep(10 if args.verbosity is not io.LogLevel.NoLogs.name else 5 * 60)
+    time.sleep(timeoutDuration)
 
   # Disconnect
   print("Disconnecting...")

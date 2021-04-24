@@ -1,4 +1,5 @@
 cd ../../
+pwd
 python3 client/src/main.py \
   --endpoint $AWS_ENDPOINT \
   --cert $AWS_CLIENT_CERT_PATH \

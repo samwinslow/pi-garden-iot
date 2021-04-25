@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0.
 
 import argparse
-from awscrt import io, mqtt, auth, http
-from awsiot import mqtt_connection_builder
 import sys
 import threading
 import time
 import json
+from awscrt import io, mqtt, auth, http
+from awsiot import mqtt_connection_builder
 
 from board import SCL, SDA
 import busio

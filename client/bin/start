@@ -4,5 +4,6 @@ python3 client/src/main.py \
   --cert $AWS_CLIENT_CERT_PATH \
   --key $AWS_PRIVATE_KEY_PATH \
   --root-ca $AWS_ROOT_CA_PATH \
-  --client-id basicPubSub \
+  --client-id gardenClient \
+  --action light.on \
   # --verbosity Info

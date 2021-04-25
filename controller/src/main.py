@@ -9,6 +9,12 @@ import threading
 import time
 import json
 
+actions = {
+  'lightOn': 'light.on',
+  'lightOff': 'light.off',
+  'noop': 'noop',
+}
+
 parser = argparse.ArgumentParser(description="Send and receive messages through and MQTT connection.")
 parser.add_argument('--endpoint', required=True, help="Your AWS IoT custom endpoint, not including a port. " +
                             "Ex: \"abcd123456wxyz-ats.iot.us-east-1.amazonaws.com\"")
@@ -20,6 +26,8 @@ parser.add_argument('--root-ca', help="File path to root certificate authority, 
 parser.add_argument('--client-id', default="gardenClient", help="Client ID for MQTT connection.")
 parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], default=io.LogLevel.NoLogs.name,
   help='Logging level')
+parser.add_argument('--action', choices=[x for x in actions.values()], default=io.LogLevel.NoLogs.name,
+  help='Specify controller action.')
 
 args = parser.parse_args()
 
@@ -86,14 +94,24 @@ if __name__ == '__main__':
   subscribe_result = subscribe_future.result()
   print("Subscribed with {}".format(str(subscribe_result['qos'])))
 
-  print("Publishing message to topic garden/sensorData...")
-  mqtt_connection.publish(
-    topic='garden/lightStatus',
-    payload=json.dumps({
-      'on': on,
-    }),
-    qos=mqtt.QoS.AT_LEAST_ONCE
-  )
+  if (args.action == actions['lightOn']):
+    print("Publishing message to topic garden/lightStatus...")
+    mqtt_connection.publish(
+      topic='garden/lightStatus',
+      payload=json.dumps({
+        'on': True,
+      }),
+      qos=mqtt.QoS.AT_LEAST_ONCE
+    )
+  elif (args.action == actions['lightOff']):
+    print("Publishing message to topic garden/lightStatus...")
+    mqtt_connection.publish(
+      topic='garden/lightStatus',
+      payload=json.dumps({
+        'on': False,
+      }),
+      qos=mqtt.QoS.AT_LEAST_ONCE
+    )
 
   # Disconnect
   print("Disconnecting...")

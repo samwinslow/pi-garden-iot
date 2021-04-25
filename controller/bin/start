@@ -1,0 +1,8 @@
+source .secrets
+python3 client/src/main.py \
+  --endpoint $AWS_ENDPOINT \
+  --cert $AWS_CLIENT_CERT_PATH \
+  --key $AWS_PRIVATE_KEY_PATH \
+  --root-ca $AWS_ROOT_CA_PATH \
+  --client-id controllerCLI \
+  # --verbosity Info

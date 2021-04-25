@@ -5,5 +5,4 @@ python3 client/src/main.py \
   --key $AWS_PRIVATE_KEY_PATH \
   --root-ca $AWS_ROOT_CA_PATH \
   --client-id gardenClient \
-  --action light.on \
   # --verbosity Info

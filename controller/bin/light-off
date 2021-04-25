@@ -5,5 +5,5 @@ python3 controller/src/main.py \
   --key $AWS_PRIVATE_KEY_PATH \
   --root-ca $AWS_ROOT_CA_PATH \
   --client-id controllerCLI \
-  --action light.on
+  --action light.off
   # --verbosity Info

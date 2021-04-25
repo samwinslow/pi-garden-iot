@@ -95,7 +95,7 @@ if __name__ == '__main__':
   print("Subscribed with {}".format(str(subscribe_result['qos'])))
 
   if (args.action == actions['lightOn']):
-    print("Publishing message to topic garden/lightStatus...")
+    print("ON: Publishing message [ON] to topic garden/lightStatus...")
     mqtt_connection.publish(
       topic='garden/lightStatus',
       payload=json.dumps({
@@ -104,7 +104,7 @@ if __name__ == '__main__':
       qos=mqtt.QoS.AT_LEAST_ONCE
     )
   elif (args.action == actions['lightOff']):
-    print("Publishing message to topic garden/lightStatus...")
+    print("Publishing message [OFF] to topic garden/lightStatus...")
     mqtt_connection.publish(
       topic='garden/lightStatus',
       payload=json.dumps({
@@ -114,7 +114,5 @@ if __name__ == '__main__':
     )
 
   # Disconnect
-  print("Disconnecting...")
   disconnect_future = mqtt_connection.disconnect()
   disconnect_future.result()
-  print("Disconnected!")

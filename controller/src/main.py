@@ -9,12 +9,6 @@ import threading
 import time
 import json
 
-actions = {
-  'lightOn': 'light.on',
-  'lightOff': 'light.off',
-  'noop': 'noop',
-}
-
 parser = argparse.ArgumentParser(description="Send and receive messages through and MQTT connection.")
 parser.add_argument('--endpoint', required=True, help="Your AWS IoT custom endpoint, not including a port. " +
                             "Ex: \"abcd123456wxyz-ats.iot.us-east-1.amazonaws.com\"")
@@ -26,8 +20,6 @@ parser.add_argument('--root-ca', help="File path to root certificate authority, 
 parser.add_argument('--client-id', default="gardenClient", help="Client ID for MQTT connection.")
 parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], default=io.LogLevel.NoLogs.name,
   help='Logging level')
-parser.add_argument('--action', choices=[x for x in actions.values()], default=io.LogLevel.NoLogs.name,
-  help='Specify controller action.')
 
 args = parser.parse_args()
 
@@ -56,9 +48,6 @@ def on_resubscribe_complete(resubscribe_future):
       if qos is None:
         sys.exit("Server rejected resubscribe to topic: {}".format(topic))
 
-def on_sensor_payload_received(topic, payload):
-  print("New sensorData payload:\n{}".format(payload))
-
 if __name__ == '__main__':
   # Spin up networking resources
   event_loop_group = io.EventLoopGroup(1)
@@ -75,7 +64,7 @@ if __name__ == '__main__':
     on_connection_resumed=on_connection_resumed,
     client_id=args.client_id,
     clean_session=False,
-    keep_alive_secs=6)
+    keep_alive_secs=timeoutDuration)
 
   print("Connecting to {} with client ID '{}'...".format(
     args.endpoint, args.client_id))
@@ -84,12 +73,11 @@ if __name__ == '__main__':
   print("Connected!")
 
   # Subscribe
-  print("Subscribing to topic garden/sensorData...")
+  print("Subscribing to topic garden/lightStatus...")
   subscribe_future, packet_id = mqtt_connection.subscribe(
-    topic="garden/sensorData",
+    topic="garden/lightStatus",
     qos=mqtt.QoS.AT_LEAST_ONCE,
-    callback=on_sensor_payload_received
-  )
+    callback=on_lightStatus_received)
 
   subscribe_result = subscribe_future.result()
   print("Subscribed with {}".format(str(subscribe_result['qos'])))

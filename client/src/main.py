@@ -62,6 +62,7 @@ def on_resubscribe_complete(resubscribe_future):
 
 # Callback when the subscribed topic receives a message
 def on_lightStatus_received(topic, payload):
+  global last_received
   print('New lightStatus payload: {}'.format(payload))
   payload_json = json.loads(payload)
   lightStatus = payload_json['on']
@@ -74,6 +75,7 @@ def on_lightStatus_received(topic, payload):
   last_received = payload_json['sent']
 
 def on_waterStatus_received(topic, payload):
+  global last_received
   print('New waterStatus payload: {}'.format(payload))
   payload_json = json.loads(payload)
   waterStatus = payload_json['on']

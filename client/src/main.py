@@ -71,6 +71,7 @@ def on_lightStatus_received(topic, payload):
     light_relay.on()
   else:
     light_relay.off()
+  last_received = payload_json['sent']
 
 def on_waterStatus_received(topic, payload):
   print('New waterStatus payload: {}'.format(payload))
@@ -82,6 +83,7 @@ def on_waterStatus_received(topic, payload):
     pump_relay.on()
   else:
     pump_relay.off()
+  last_received = payload_json['sent']
 
 timeout_duration = 10 if args.verbosity is not io.LogLevel.NoLogs.name else 5 * 60
 

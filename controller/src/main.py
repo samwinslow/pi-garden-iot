@@ -9,6 +9,12 @@ import threading
 import time
 import json
 
+actions = {
+  'lightOn': 'light.on',
+  'lightOff': 'light.off',
+  'noop': 'noop',
+}
+
 parser = argparse.ArgumentParser(description="Send and receive messages through and MQTT connection.")
 parser.add_argument('--endpoint', required=True, help="Your AWS IoT custom endpoint, not including a port. " +
                             "Ex: \"abcd123456wxyz-ats.iot.us-east-1.amazonaws.com\"")
@@ -20,6 +26,8 @@ parser.add_argument('--root-ca', help="File path to root certificate authority, 
 parser.add_argument('--client-id', default="gardenClient", help="Client ID for MQTT connection.")
 parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], default=io.LogLevel.NoLogs.name,
   help='Logging level')
+parser.add_argument('--action', choices=[x for x in actions.values()], default=io.LogLevel.NoLogs.name,
+  help='Specify controller action.')
 
 args = parser.parse_args()
 
@@ -28,6 +36,9 @@ io.init_logging(getattr(io.LogLevel, args.verbosity), 'stderr')
 # Callback when connection is accidentally lost.
 def on_connection_interrupted(connection, error, **kwargs):
   print("Connection interrupted. error: {}".format(error))
+
+def on_lightStatus_received(topic, payload):
+  print("New lightStatus payload:\n{}".format(payload))
 
 # Callback when an interrupted connection is re-established.
 def on_connection_resumed(connection, return_code, session_present, **kwargs):
@@ -64,7 +75,7 @@ if __name__ == '__main__':
     on_connection_resumed=on_connection_resumed,
     client_id=args.client_id,
     clean_session=False,
-    keep_alive_secs=timeoutDuration)
+    keep_alive_secs=6)
 
   print("Connecting to {} with client ID '{}'...".format(
     args.endpoint, args.client_id))
@@ -88,6 +99,7 @@ if __name__ == '__main__':
       topic='garden/lightStatus',
       payload=json.dumps({
         'on': True,
+        'sent': time.time()
       }),
       qos=mqtt.QoS.AT_LEAST_ONCE
     )
@@ -97,6 +109,7 @@ if __name__ == '__main__':
       topic='garden/lightStatus',
       payload=json.dumps({
         'on': False,
+        'sent': time.time()
       }),
       qos=mqtt.QoS.AT_LEAST_ONCE
     )

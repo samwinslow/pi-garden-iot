@@ -3,17 +3,15 @@
 
 import argparse
 import sys
-import threading
 import time
 import json
-from awscrt import io, mqtt, auth, http
+from awscrt import io, mqtt
 from awsiot import mqtt_connection_builder
-
 from board import SCL, SDA
 import busio
 from adafruit_seesaw.seesaw import Seesaw
-
 from gpiozero import DigitalOutputDevice
+import posthog
 
 parser = argparse.ArgumentParser(description='Send and receive messages through and MQTT connection.')
 parser.add_argument('--endpoint', required=True, help='Your AWS IoT custom endpoint, not including a port. ' +
@@ -25,12 +23,16 @@ parser.add_argument('--root-ca', help='File path to root certificate authority, 
                     'your trust store.')
 parser.add_argument('--client-id', default='gardenClient', help='Client ID for MQTT connection.')
 parser.add_argument('--keep-alive', default=60, help='Keep-alive interval (secs) for MQTT connection.')
+parser.add_argument('--ph-api-key', required=True, help='PostHog API key.')
+parser.add_argument('--ph-host', required=True, help='PostHog host (including protocol).')
 parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], default=io.LogLevel.NoLogs.name,
   help='Logging level')
 
 args = parser.parse_args()
 
 io.init_logging(getattr(io.LogLevel, args.verbosity), 'stderr')
+posthog.api_key = args.ph_api_key
+posthog.host = args.ph_host
 
 # Initialize I2C soil sensor
 i2c_bus = busio.I2C(SCL, SDA)
@@ -43,22 +45,27 @@ pump_relay = DigitalOutputDevice(23)
 # Callback when connection is accidentally lost.
 def on_connection_interrupted(connection, error, **kwargs):
   print('Connection interrupted. error: {}'.format(error))
+  posthog.capture(args.client_id, 'connection interrupted', { 'error': error })
 
 # Callback when an interrupted connection is re-established.
 def on_connection_resumed(connection, return_code, session_present, **kwargs):
   print('Connection resumed. return_code: {} session_present: {}'.format(return_code, session_present))
+  posthog.capture(args.client_id, 'connection resumed', { 'session_present': session_present })
   resubscribe_future, _ = connection.resubscribe_existing_topics()
   resubscribe_future.add_done_callback(on_resubscribe_complete)
   if return_code == mqtt.ConnectReturnCode.ACCEPTED and not session_present:
     print('Session did not persist. Resubscribing to existing topics...')
+    posthog.capture(args.client_id, 'session did not persist')
     resubscribe_future, _ = connection.resubscribe_existing_topics()
     resubscribe_future.add_done_callback(on_resubscribe_complete)
 
 def on_resubscribe_complete(resubscribe_future):
     resubscribe_results = resubscribe_future.result()
     print('Resubscribe results: {}'.format(resubscribe_results))
+    posthog.capture(args.client_id, 'connection resubscribed', { 'results': resubscribe_results })
     for topic, qos in resubscribe_results['topics']:
       if qos is None:
+        posthog.capture(args.client_id, 'resubscribe request rejected', { 'topic': topic })
         sys.exit('Server rejected resubscribe to topic: {}'.format(topic))
 
 # Callback when the subscribed topic receives a message
@@ -67,7 +74,9 @@ def on_lightStatus_received(topic, payload):
   print('New lightStatus payload: {}'.format(payload))
   payload_json = json.loads(payload)
   lightStatus = payload_json['on']
+  posthog.capture(args.client_id, 'lightStatus payload received', { 'on': lightStatus })
   if payload_json['sent'] < last_received:
+    posthog.capture(args.client_id, 'lightStatus timestamp out of bounds')
     return
   if lightStatus is True:
     light_relay.on()
@@ -80,7 +89,9 @@ def on_waterStatus_received(topic, payload):
   print('New waterStatus payload: {}'.format(payload))
   payload_json = json.loads(payload)
   waterStatus = payload_json['on']
+  posthog.capture(args.client_id, 'waterStatus payload received', { 'on': waterStatus })
   if payload_json['sent'] < last_received:
+    posthog.capture(args.client_id, 'waterStatus timestamp out of bounds')
     return
   if waterStatus is True:
     pump_relay.on()
@@ -115,6 +126,7 @@ if __name__ == '__main__':
   connect_future = mqtt_connection.connect()
   connect_future.result()
   print('Connected!')
+  posthog.capture(args.client_id, 'connection success')
 
   # Subscribe
   print('Subscribing to topic garden/lightStatus...')
@@ -125,6 +137,7 @@ if __name__ == '__main__':
 
   subscribe_result = subscribe_future.result()
   print('Subscribed with {}'.format(str(subscribe_result['qos'])))
+  posthog.capture(args.client_id, 'subscription success', { 'topic': 'garden/lightStatus' })
 
   print('Subscribing to topic garden/waterStatus...')
   subscribe_future, packet_id = mqtt_connection.subscribe(
@@ -134,6 +147,7 @@ if __name__ == '__main__':
 
   subscribe_result = subscribe_future.result()
   print('Subscribed with {}'.format(str(subscribe_result['qos'])))
+  posthog.capture(args.client_id, 'subscription success', { 'topic': 'garden/waterStatus' })
 
   while True:
     temperature = soil.get_temp()
@@ -148,14 +162,15 @@ if __name__ == '__main__':
       },
       'sent': time.time()
     }
-    lightPayload = {
-      'on': True,
-      'sent': time.time()
-    }
-    waterPayload = {
-      'on': False,
-      'sent': time.time()
-    }
+    posthog.capture(args.client_id, 'sensor data collected', sensorPayload)
+    # lightPayload = {
+    #   'on': True,
+    #   'sent': time.time()
+    # }
+    # waterPayload = {
+    #   'on': False,
+    #   'sent': time.time()
+    # }
     print('Publishing message to topic garden/sensorData...')
     mqtt_connection.publish(
       topic='garden/sensorData',

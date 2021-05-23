@@ -24,6 +24,7 @@ parser.add_argument('--root-ca', help='File path to root certificate authority, 
                     'Necessary if MQTT server uses a certificate that`s not already in ' +
                     'your trust store.')
 parser.add_argument('--client-id', default='gardenClient', help='Client ID for MQTT connection.')
+parser.add_argument('--keep-alive', default=60, help='Keep-alive interval (secs) for MQTT connection.')
 parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], default=io.LogLevel.NoLogs.name,
   help='Logging level')
 
@@ -87,8 +88,6 @@ def on_waterStatus_received(topic, payload):
     pump_relay.off()
   last_received = payload_json['sent']
 
-timeout_duration = 10 if args.verbosity is not io.LogLevel.NoLogs.name else 5 * 60
-
 # Keep track of epoch time of last received message
 last_received = 0
 
@@ -109,7 +108,7 @@ if __name__ == '__main__':
     on_connection_resumed=on_connection_resumed,
     client_id=args.client_id,
     clean_session=False,
-    keep_alive_secs=timeout_duration)
+    keep_alive_secs=args.keep_alive)
 
   print('Connecting to {} with client ID {}...'.format(
     args.endpoint, args.client_id))
@@ -162,7 +161,7 @@ if __name__ == '__main__':
       topic='garden/sensorData',
       payload=json.dumps(sensorPayload),
       qos=mqtt.QoS.AT_LEAST_ONCE)
-    time.sleep(timeout_duration)
+    time.sleep(args.keep_alive)
 
   # Disconnect
   print('Disconnecting...')

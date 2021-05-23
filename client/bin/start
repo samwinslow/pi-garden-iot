@@ -5,4 +5,6 @@ python3 client/src/main.py \
   --key $AWS_PRIVATE_KEY_PATH \
   --root-ca $AWS_ROOT_CA_PATH \
   --client-id gardenClient \
+  --ph-api-key $POSTHOG_API_KEY \
+  --ph-host $POSTHOG_HOST \
   # --verbosity Info
